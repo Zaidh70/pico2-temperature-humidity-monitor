@@ -1,116 +1,133 @@
-# PicoTempHumidMonitor — Raspberry Pi Pico 2 + Java Serial/TCP Bridge
+# Raspberry Pi Pico 2 Temperature & Humidity Monitoring System
 
-A hardware/software integration project built for a university engineering course. A Raspberry Pi Pico 2 reads temperature and humidity from a Grove DHT11 sensor, activates a buzzer when the temperature exceeds a threshold, and communicates with Java applications over serial using a custom NAMO-style framed protocol. A Java server bridges serial messages to TCP clients.
+An embedded systems project built around the Raspberry Pi Pico 2 and a Grove DHT11 temperature and humidity sensor. The system monitors environmental conditions, uses a buzzer to provide temperature-based alerts, and integrates with a Java serial communication and TCP networking framework.
 
-**Demo videos**
-- [Part 1 — hardware and communication demo](https://youtu.be/0w7GskAXqsA)
-- [Part 2 — continued project demo](https://youtu.be/SYpWVrWdtz0)
+**Project demonstrations**
 
-## System overview
+- [Watch Part 1 on YouTube](https://youtu.be/0w7GskAXqsA)
+- [Watch Part 2 on YouTube](https://youtu.be/SYpWVrWdtz0)
 
-```text
-Grove DHT11 + buzzer
-        │
-        ▼
-Raspberry Pi Pico 2 firmware
-  - DHT11 readings
-  - temperature threshold
-  - buzzer alert
-  - framed serial messages
-        │ USB serial (9600 baud; example port COM4)
-        ▼
-Java SerialCommunication
-        │
-        ▼
-Java SerialServer ───── TCP port 9000 ───── Java SerialTcpClient
-```
+## Project Overview
 
-## Features documented in the original project
+The goal of this project was to build a working embedded environmental monitoring system and integrate it with a software communication framework.
 
-- Reads temperature and relative humidity from a DHT11 sensor.
-- Uses a configurable firmware threshold (`tempThreshold`, initially 22.0 °C).
-- Activates the buzzer briefly when temperature exceeds the threshold.
-- Sends temperature, humidity, and threshold-related messages over serial.
-- Uses a length-prefixed message format: 4-byte key length, 4-byte value length, key bytes, value bytes, then a one-byte message type.
-- Java serial layer supports message subscriptions, background read/write threads, queued outgoing messages, and reconnection attempts.
-- Java TCP server broadcasts received serial messages to connected clients and uses heartbeat messages.
-- Java TCP client supports text/binary commands, listeners, heartbeat handling, and reconnect attempts.
+The microcontroller runs Arduino/C++ firmware to collect temperature and humidity readings from a DHT11 sensor. The application also implements buzzer behaviour based on temperature readings.
+
+For communication with other software components, the project uses professor-provided Java serial communication and TCP client/server classes built around the NAMO serial communication protocol. I adapted the provided configuration values to match my hardware and project setup.
+
+## Features
+
+- **Temperature and humidity monitoring:** Read environmental measurements from a Grove DHT11 sensor.
+- **Embedded firmware:** Implemented the application logic in Arduino/C++ for the Raspberry Pi Pico 2.
+- **Temperature-based alerts:** Activate a buzzer according to the application's configured temperature threshold.
+- **Serial communication integration:** Connect the microcontroller application to an existing Java serial communication framework.
+- **TCP client/server integration:** Use the provided Java networking components to facilitate communication between serial hardware and network-connected applications.
+- **Hardware integration and testing:** Configure the sensor and buzzer, integrate the components, and demonstrate the working system.
 
 ## Hardware
 
-The accompanying course report describes:
+| Component | Purpose |
+|---|---|
+| Raspberry Pi Pico 2 | Main microcontroller |
+| Grove DHT11 temperature and humidity sensor | Environmental measurements |
+| Grove buzzer module | Audible temperature alerts |
+| Grove Shield / compatible hardware connections | Peripheral integration and wiring |
+
+### Pin Configuration
+
+The original project configuration uses the following connections:
+
+| Component | Pin |
+|---|---|
+| DHT11 sensor | D16 |
+| Buzzer | D18 |
+
+Confirm these pin assignments against your actual wiring and the recovered firmware before recreating the setup.
+
+## Software and Technologies
+
+- Arduino/C++
 - Raspberry Pi Pico 2
-- Seeed Studio Grove Shield for Raspberry Pi Pico
-- Grove DHT11 sensor on digital pin D16
-- Grove buzzer on digital pin D18
+- DHT11 sensor integration
+- Serial communication
+- Java
+- TCP/IP networking
+- NAMO serial communication protocol
+- Git and GitHub
 
-The report describes the Pico serial connection using 9600 baud, example Windows serial port COM4, and TCP port 9000. Port names vary by machine.
+## System Architecture
 
-## Repository layout
+The system consists of two main software layers.
 
-```text
-.
-├── README.md
-├── .gitignore
-├── firmware/
-│   └── PicoTempHumidMonitor.ino
-├── protocol/
-│   └── namo_serial_proto.h
-├── java-server/
-│   ├── SerialCommunication.java
-│   └── SerialServer.java
-├── java-client/
-│   └── SerialTcpClient.java
-└── docs/
-    └── ProjectDemoVideosLink.txt
-```
+### 1. Embedded application
 
-## Build and run notes
+The Raspberry Pi Pico 2 runs the Arduino/C++ firmware responsible for:
 
-### Firmware
+1. Initializing the sensor and required hardware.
+2. Reading temperature and humidity measurements.
+3. Evaluating temperature readings against the configured alert threshold.
+4. Activating the buzzer according to the application's alert logic.
+5. Communicating with the surrounding system as implemented in the firmware.
 
-1. Install Arduino IDE and support for the Raspberry Pi Pico 2 board.
-2. Install a compatible DHT sensor library.
-3. Add `protocol/namo_serial_proto.h` to the firmware project's include path (or the Arduino library location as appropriate).
-4. Check the firmware against your installed board package and libraries before compiling. Confirm all pin definitions and protocol callbacks.
-5. Select the correct Pico 2 board and serial port, then upload the sketch.
+### 2. Java communication framework
 
-### Java
+The project also includes Java components for serial communication and TCP networking. These components provide a bridge between the serial-connected hardware and network clients.
 
-The Java sources depend on **jSerialComm 2.11.0**. Obtain the dependency from its official project/release source and place the JAR in a local `lib/` folder; the JAR is not included in this repository package.
+The Java framework and NAMO protocol were provided by Professor Navid Mohammed at York University. I adapted the relevant configuration values for my project setup rather than claiming authorship of the original communication framework.
 
-Use a recent JDK. From the repository root, example Windows PowerShell commands are:
+## My Contributions
 
-```powershell
-New-Item -ItemType Directory -Force out | Out-Null
-javac -cp "lib/jSerialComm-2.11.0.jar" -d out java-server/SerialCommunication.java java-server/SerialServer.java
-javac -cp "lib/jSerialComm-2.11.0.jar;out" -d out java-client/SerialTcpClient.java
-```
+Although this project was classified as a university group assignment, I independently implemented the working embedded application and prepared the project report.
 
-Run the server with your actual serial port, baud rate and line configuration, for example:
+My contributions included:
 
-```powershell
-java -cp "out;lib/jSerialComm-2.11.0.jar" SerialServer 9000 COM4 9600 8N1
-```
+- Developing the Arduino/C++ firmware for the Raspberry Pi Pico 2.
+- Implementing temperature and humidity monitoring using the DHT11 sensor.
+- Implementing temperature-based buzzer behaviour.
+- Integrating the sensor and buzzer with the microcontroller.
+- Configuring the application to work with the provided communication framework.
+- Testing the integrated hardware and software and documenting the results.
+- Recording project demonstrations showing the system operating in practice.
 
-The client source's `main` currently expects three arguments (`server_host`, `server_port`, and serial port name). Check the source and run configuration before starting it. The project was originally demonstrated in a particular Windows/COM-port setup; these commands are starting points, not a guarantee that the recovered code compiles unchanged on every system.
+I also received guidance from my professor on initializing the chipset and sensors.
 
-## Known review items
+## Acknowledgments and Third-Party Components
 
-This repository preserves recovered course-project source files for documentation and review. It has **not** been represented as a clean, production-ready or currently verified build.
+The Java serial communication classes, Java TCP client/server classes, and NAMO serial communication protocol were provided by Professor Navid Mohammed at York University.
 
-Before claiming a fresh successful build, review at least these items:
-- The firmware calls `pinMode(SPEAKER_PIN, OUTPUT)`, but the recovered sketch does not define `SPEAKER_PIN`.
-- The firmware uses `serialProto.begin(onMessageReceived)`; verify the callback declaration and compile behaviour with your installed Arduino toolchain.
-- Confirm the NAMO message framing and Java/Pico implementations agree on message lengths, byte order and type values.
-- The Java sources contain broad exception handling and areas that merit testing, especially partial serial reads, reconnection and thread shutdown.
-- The Java server and client should be tested together using the actual board and serial port.
-- The original `compile.me` uses a colon-separated classpath, which is typical on Unix-like systems; Windows classpaths use semicolons.
+These components were adapted for the project's hardware and configuration. They are acknowledged as professor-provided materials and are not claimed as my original implementations.
 
-## Academic work and attribution
+The professor permits redistribution under a restriction against proprietary commercial or industrial use. The included professor-provided materials remain subject to that restriction. Their inclusion does not grant permission for proprietary commercial or industrial use.
 
-This began as a group university project. Confirm your course's rules allow public release before publishing. Credit your teammate and the course/instructor where appropriate, and do not publish student IDs or other private information from the original report. The full report is intentionally not included in this starter package.
+## Running the Project
 
-## License
+Recreating the original project requires the appropriate hardware, software and configuration.
 
-No license has been selected. Until a suitable license is added and any course restrictions are checked, visitors should not assume they have permission to reuse or redistribute this code.
+1. Set up the Raspberry Pi Pico 2 development environment with the required Arduino support.
+2. Connect the DHT11 sensor and buzzer according to the project's pin configuration.
+3. Open the recovered Arduino firmware in the development environment.
+4. Verify the board settings, sensor initialization and pin assignments.
+5. Upload the firmware to the Raspberry Pi Pico 2 and test the sensor readings and buzzer behaviour.
+6. If reproducing the Java communication setup, configure the serial port, baud rate and TCP port to match your computer and hardware.
+7. Run the Java communication components with their required dependencies and verify communication between the hardware and software layers.
+
+The original setup used COM4 at 9600 baud and TCP port 9000. These are configuration values from the original environment and may need to be changed on another computer.
+
+Refer to the source files and demonstration videos for additional implementation details.
+
+## Future Improvements
+
+Potential improvements include:
+
+- Add structured logging for sensor readings and communication events.
+- Improve error handling for sensor failures and serial disconnections.
+- Add configurable temperature thresholds.
+- Add automated tests for firmware logic and communication message handling.
+- Build a dashboard to display historical environmental readings.
+- Improve configuration management so hardware settings do not need to be edited directly in the source code.
+
+## Project Context
+
+This project demonstrates hands-on experience with embedded firmware, sensor integration, hardware testing, and integration with an existing Java networking framework.
+
+It was developed as a university engineering project, with the original implementation and demonstration videos reflecting the work completed at that time.
